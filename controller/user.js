@@ -1,5 +1,6 @@
 const User = require("../models/user");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 const registerUser = async (req, res) => {
     try {
@@ -50,7 +51,7 @@ const loginUser = async (req, res) => {
         if (!userDetails) {
             return res
                 .status(401)
-                .json({ errorMessage: "Invalid credentials" });
+                .json({ errorMessage: "User doesn't exists" });
         }
 
         const passwordMatch = await bcrypt.compare(
@@ -64,7 +65,17 @@ const loginUser = async (req, res) => {
                 .json({ errorMessage: "Invalid credentials" });
         }
 
-        res.json({ message: "User logged in" });
+        const token = jwt.sign(
+            { userId: userDetails._id, name: userDetails.name },
+            process.env.SECRET_CODE,
+            { expiresIn: "60h" }
+        );
+
+        res.json({
+            message: "User logged in",
+            token: token,
+            name: userDetails.name,
+        });
     } catch (error) {
         console.log(error);
         res.status(500).json({ errorMessage: "Something went wrong!" });
