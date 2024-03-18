@@ -82,9 +82,10 @@ const updateJobDetailsById = async (req, res, next) => {
             });
         }
 
-        const isJobExists = Job.findOne({ _id: jobId, refUserId: userId });
-        // bug in this code
-
+        const isJobExists = await Job.findOne({
+            _id: jobId,
+            refUserId: userId,
+        });
         if (!isJobExists) {
             return res.status(400).json({
                 errorMessage: "Bad Request",
@@ -145,8 +146,23 @@ const updateJobDetailsById = async (req, res, next) => {
 const getAllJobs = async (req, res, next) => {
     try {
         const title = req.query.title || "";
+        const skills = req.query.skills;
+        let filteredSkills;
+        let filter = {};
+
+        if (skills) {
+            filteredSkills = skills.split(",");
+            const caseInsensitiveFilteredSkills = filteredSkills.map(
+                (element) => new RegExp(element, "i")
+            );
+            filter = { skills: { $in: caseInsensitiveFilteredSkills } };
+        }
+
         const jobList = await Job.find(
-            { title: { $regex: title, $options: "i" } },
+            {
+                title: { $regex: title, $options: "i" },
+                ...filter,
+            },
             { companyName: 1, title: 1 }
         );
         res.json({ data: jobList });
