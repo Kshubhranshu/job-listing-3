@@ -75,6 +75,7 @@ const loginUser = async (req, res) => {
             message: "User logged in",
             token: token,
             name: userDetails.name,
+            userId: userDetails?._id,
         });
     } catch (error) {
         console.log(error);

@@ -1,4 +1,6 @@
 const Job = require("../models/job");
+const { decodeJwtToken } = require("../middlewares/verifyToken");
+const { ObjectId } = require("mongoose");
 
 const createJobPost = async (req, res, next) => {
     try {
@@ -56,6 +58,8 @@ const createJobPost = async (req, res, next) => {
 const getJobDetailsById = async (req, res, next) => {
     try {
         const jobId = req.params.jobId;
+        // const userId = decodeJwtToken(req.headers["authorization"]);
+        const userId = req.body.userId;
 
         const jobDetails = await Job.findById(jobId);
 
@@ -65,7 +69,15 @@ const getJobDetailsById = async (req, res, next) => {
             });
         }
 
-        res.json({ data: jobDetails });
+        let isEditable;
+        if (userId) {
+            const formattedUserId = new ObjectId(userId);
+            if (jobDetails.refUserId.equals(formattedUserId)) {
+                isEditable = true;
+            }
+        }
+
+        res.json({ jobDetails, isEditable });
     } catch (error) {
         next(error);
     }
@@ -162,8 +174,8 @@ const getAllJobs = async (req, res, next) => {
             {
                 title: { $regex: title, $options: "i" },
                 ...filter,
-            },
-            { companyName: 1, title: 1 }
+            }
+            // { companyName: 1, title: 1 }
         );
         res.json({ data: jobList });
     } catch (error) {
